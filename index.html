@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mediapad</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --purple: #7c3aed;
+    --purple-light: #a855f7;
+    --purple-pale: #c084fc;
+    --purple-dim: #4c1d95;
+    --black: #050508;
+    --surface: rgba(10, 8, 20, 0.75);
+    --border: rgba(124, 58, 237, 0.2);
+    --border-bright: rgba(168, 85, 247, 0.4);
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  html { scroll-behavior: smooth; }
+  body { background: var(--black); color: var(--text); font-family: 'Inter', -apple-system, sans-serif; min-height: 100vh; overflow-x: hidden; position: relative; }
+
+  #marble-canvas { position: fixed; inset: 0; z-index: 0; width: 100%; height: 100%; }
+  #marble-canvas svg { width: 100%; height: 100%; display: block; }
+  .marble-overlay { position: fixed; inset: 0; z-index: 1; background: rgba(5, 5, 8, 0.68); }
+  main { position: relative; z-index: 2; max-width: 900px; margin: 0 auto; padding: 0 1.5rem; }
+
+  nav { position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; max-width: 900px; margin: 0 auto; background: rgba(5,5,8,0.5); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); }
+  .nav-logo { font-size: 0.95rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--purple-pale); }
+  .nav-links { display: flex; gap: 1.75rem; list-style: none; }
+  .nav-links a { font-size: 0.8rem; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+  .nav-links a:hover { color: var(--purple-pale); }
+  .nav-gh { font-size: 0.8rem; font-weight: 600; color: var(--purple-pale); text-decoration: none; border: 1px solid var(--border-bright); padding: 0.35rem 0.9rem; border-radius: 6px; transition: background 0.2s; }
+  .nav-gh:hover { background: rgba(124,58,237,0.15); }
+
+  .card { background: var(--surface); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid var(--border); border-radius: 16px; padding: 2.5rem; }
+  section { padding: 4rem 0 0; }
+  section:last-of-type { padding-bottom: 5rem; }
+
+  .label { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--purple-light); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+  .label::before { content: ''; display: inline-block; width: 18px; height: 1px; background: var(--purple-light); }
+
+  /* HERO */
+  #hero { padding-top: 5rem; padding-bottom: 1rem; text-align: center; }
+  .hero-eyebrow { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 3px; text-transform: uppercase; color: var(--purple-pale); margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: center; gap: 0.6rem; }
+  .hero-eyebrow span { width: 30px; height: 1px; background: var(--purple-pale); display: inline-block; }
+  h1 { font-size: clamp(3rem, 8vw, 5.5rem); font-weight: 900; line-height: 0.95; letter-spacing: -2px; margin-bottom: 1.25rem; }
+  h1 .accent { color: var(--purple-pale); }
+  .hero-sub { font-size: 1.05rem; color: var(--muted); max-width: 500px; margin: 0 auto 2.5rem; line-height: 1.7; }
+  .hero-btns { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+  .btn-primary { background: var(--purple); color: white; font-weight: 700; font-size: 0.875rem; padding: 0.75rem 1.75rem; border-radius: 8px; text-decoration: none; transition: background 0.2s, transform 0.1s; display: inline-flex; align-items: center; gap: 0.4rem; }
+  .btn-primary:hover { background: #6d28d9; transform: translateY(-1px); }
+  .btn-ghost { border: 1px solid var(--border-bright); color: var(--purple-pale); font-weight: 600; font-size: 0.875rem; padding: 0.75rem 1.75rem; border-radius: 8px; text-decoration: none; transition: background 0.2s; display: inline-flex; align-items: center; gap: 0.4rem; }
+  .btn-ghost:hover { background: rgba(124,58,237,0.1); }
+  .hero-tags { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-top: 2.5rem; }
+  .tag { font-family: var(--mono); font-size: 0.7rem; color: var(--purple-pale); border: 1px solid var(--border); background: rgba(76,29,149,0.15); padding: 0.3rem 0.75rem; border-radius: 999px; }
+
+  /* PROGRESS BAR */
+  .progress-bar {
+    margin-top: 2.5rem;
+    background: rgba(10, 8, 20, 0.7);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    backdrop-filter: blur(16px);
+    text-align: left;
+  }
+  .progress-bar-label { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--purple-light); margin-bottom: 0.85rem; }
+  .progress-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+  .progress-step { display: flex; flex-direction: column; align-items: center; position: relative; }
+  .progress-step:not(:last-child)::after { content: ''; position: absolute; top: 11px; left: 60%; width: 80%; height: 2px; background: var(--border); }
+  .progress-step.done::after { background: #4ade80; }
+  .progress-step.wip::after { background: var(--border); }
+  .step-dot { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 700; margin-bottom: 0.5rem; position: relative; z-index: 1; flex-shrink: 0; }
+  .step-dot.done { background: rgba(34,197,94,0.2); border: 2px solid #4ade80; color: #4ade80; }
+  .step-dot.wip { background: rgba(168,85,247,0.15); border: 2px solid var(--purple-light); color: var(--purple-pale); }
+  .step-dot.next { background: rgba(30,30,50,0.6); border: 2px solid #1e293b; color: #334155; }
+  .step-label { font-size: 0.7rem; color: var(--muted); text-align: center; line-height: 1.3; max-width: 80px; }
+  .step-label.done { color: #86efac; }
+  .step-label.wip { color: var(--purple-pale); }
+
+  h2 { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 0.5rem; }
+  .section-sub { color: var(--muted); font-size: 0.925rem; line-height: 1.7; margin-bottom: 1.75rem; }
+
+  /* PCB */
+  .pcb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
+  .pcb-component { background: rgba(76,29,149,0.12); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; }
+  .pcb-component.pending { opacity: 0.5; border-style: dashed; }
+  .pcb-component-icon { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .pcb-component-name { font-size: 0.875rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+  .pcb-component-desc { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+  .pcb-component-chip { display: inline-block; font-family: var(--mono); font-size: 0.65rem; background: rgba(124,58,237,0.2); color: var(--purple-pale); padding: 0.15rem 0.5rem; border-radius: 4px; margin-top: 0.5rem; }
+  .pcb-component-chip.pending-chip { background: rgba(30,30,50,0.5); color: #475569; border: 1px dashed #1e293b; }
+  .pcb-diagram { margin-top: 1.5rem; border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; background: rgba(5,5,8,0.6); display: flex; flex-direction: column; gap: 0.75rem; }
+  .pcb-diagram-label { font-family: var(--mono); font-size: 0.65rem; color: var(--purple-light); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 0.25rem; }
+  .flow { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+  .flow-node { background: rgba(76,29,149,0.25); border: 1px solid var(--border-bright); border-radius: 6px; padding: 0.4rem 0.85rem; font-size: 0.75rem; font-weight: 600; color: var(--purple-pale); white-space: nowrap; }
+  .flow-arrow { color: var(--purple-dim); font-size: 0.9rem; }
+
+  /* CASE */
+  .case-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem; }
+  .case-card { background: rgba(76,29,149,0.1); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; }
+  .case-card-label { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 0.75rem; }
+  .case-card h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.4rem; }
+  .case-card p { font-size: 0.8rem; color: var(--muted); line-height: 1.6; }
+  .case-visual { width: 100%; height: 90px; border-radius: 6px; margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-family: var(--mono); color: #334155; }
+  .case-visual-current { background: #0f0f1a; border: 1px solid #1e293b; }
+  .case-visual-goal { background: linear-gradient(135deg, rgba(76,29,149,0.3), rgba(124,58,237,0.1)); border: 1px dashed var(--border-bright); color: var(--purple-dim); }
+  .rect-box { width: 120px; height: 55px; border: 2px solid #1e293b; border-radius: 4px; background: #0a0a14; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .rect-switch { width: 12px; height: 12px; background: #1e293b; border-radius: 2px; }
+  .rect-knob { width: 14px; height: 14px; background: #1e293b; border-radius: 50%; }
+
+  /* FIRMWARE */
+  .code-block { background: rgba(5,5,8,0.8); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem 1.5rem; font-family: var(--mono); font-size: 0.78rem; line-height: 1.8; overflow-x: auto; margin-top: 1.5rem; }
+  .code-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
+  .code-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .code-filename { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); margin-left: auto; }
+  .c-comment { color: #4b5563; }
+  .c-keyword { color: #a78bfa; }
+  .c-fn { color: #c084fc; }
+  .fw-features { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 1.25rem; }
+  .fw-feature { display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.85rem 1rem; background: rgba(76,29,149,0.1); border: 1px solid var(--border); border-radius: 8px; }
+  .fw-feature-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+  .fw-feature-text { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+  .fw-feature-text strong { color: var(--text); display: block; margin-bottom: 2px; font-size: 0.82rem; }
+
+  /* SPECS */
+  .specs-table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; font-size: 0.85rem; }
+  .specs-table th { text-align: left; font-family: var(--mono); font-size: 0.65rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--purple-light); padding: 0.6rem 1rem; border-bottom: 1px solid var(--border-bright); }
+  .specs-table td { padding: 0.85rem 1rem; border-bottom: 1px solid var(--border); color: var(--muted); vertical-align: top; }
+  .specs-table td:first-child { color: var(--text); font-weight: 600; width: 36%; }
+  .specs-table tr:last-child td { border-bottom: none; }
+  .specs-table tr:hover td { background: rgba(124,58,237,0.04); }
+  .kit-badge { display: inline-block; font-family: var(--mono); font-size: 0.6rem; background: rgba(76,29,149,0.3); color: var(--purple-pale); border: 1px solid var(--border-bright); padding: 0.1rem 0.45rem; border-radius: 4px; margin-left: 0.4rem; vertical-align: middle; }
+
+  /* WHATS NEXT */
+  .next-items { display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem; }
+  .next-item { display: grid; grid-template-columns: auto 1fr auto; gap: 1rem; align-items: center; padding: 1rem 1.25rem; background: rgba(76,29,149,0.08); border: 1px solid var(--border); border-radius: 10px; }
+  .next-item.active { border-color: var(--border-bright); background: rgba(76,29,149,0.15); }
+  .next-num { font-family: var(--mono); font-size: 1.1rem; font-weight: 700; color: var(--purple-dim); min-width: 2rem; text-align: center; }
+  .next-content h4 { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.2rem; }
+  .next-content p { font-size: 0.78rem; color: var(--muted); line-height: 1.55; }
+  .next-badge { font-family: var(--mono); font-size: 0.62rem; padding: 0.25rem 0.6rem; border-radius: 999px; font-weight: 600; white-space: nowrap; }
+  .badge-wip { background: rgba(168,85,247,0.15); color: var(--purple-pale); border: 1px solid var(--border-bright); }
+  .badge-next { background: rgba(30,30,50,0.6); color: #475569; border: 1px solid #1e293b; }
+
+  /* HC BANNER */
+  .hc-banner { margin-top: 2.5rem; background: rgba(76,29,149,0.12); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; display: flex; align-items: center; gap: 1rem; }
+  .hc-banner-text { flex: 1; font-size: 0.8rem; color: var(--muted); line-height: 1.6; }
+  .hc-banner-text strong { color: var(--text); }
+  .hc-banner-link { flex-shrink: 0; font-size: 0.75rem; font-weight: 700; color: var(--purple-pale); text-decoration: none; border: 1px solid var(--border-bright); padding: 0.4rem 0.9rem; border-radius: 6px; white-space: nowrap; transition: background 0.2s; }
+  .hc-banner-link:hover { background: rgba(124,58,237,0.15); }
+
+  /* CTA */
+  #cta { text-align: center; padding: 4rem 0 5rem; }
+  .cta-card { background: linear-gradient(135deg, rgba(76,29,149,0.35) 0%, rgba(10,8,20,0.8) 100%); border: 1px solid var(--border-bright); }
+  #cta h2 { font-size: 2.25rem; margin-bottom: 0.75rem; }
+  #cta p { color: var(--muted); max-width: 460px; margin: 0 auto 1.5rem; line-height: 1.7; }
+
+  footer { position: relative; z-index: 2; text-align: center; padding: 1.5rem; border-top: 1px solid var(--border); font-size: 0.75rem; color: #2d2d3f; font-family: var(--mono); }
+</style>
+</head>
+<body>
+
+<div id="marble-canvas">
+  <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <filter id="marble" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="linearRGB">
+        <feTurbulence type="turbulence" baseFrequency="0.008 0.006" numOctaves="8" seed="12" result="turb"/>
+        <feDisplacementMap in="SourceGraphic" in2="turb" scale="320" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+      <filter id="marble2" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="linearRGB">
+        <feTurbulence type="turbulence" baseFrequency="0.014 0.010" numOctaves="6" seed="7" result="turb2"/>
+        <feDisplacementMap in="SourceGraphic" in2="turb2" scale="220" xChannelSelector="G" yChannelSelector="R"/>
+      </filter>
+    </defs>
+    <rect width="1440" height="900" fill="#6b21d4" filter="url(#marble)"/>
+    <rect width="1440" height="900" fill="#4c0fa0" opacity="0.45" filter="url(#marble2)"/>
+  </svg>
+</div>
+<div class="marble-overlay"></div>
+
+<nav>
+  <div class="nav-logo">Mediapad</div>
+  <ul class="nav-links">
+    <li><a href="#pcb">the pcb</a></li>
+    <li><a href="#case">the case</a></li>
+    <li><a href="#firmware">firmware</a></li>
+    <li><a href="#specs">parts</a></li>
+  </ul>
+  <a href="https://github.com/AryaVora621/mediapad" class="nav-gh">GitHub ↗</a>
+</nav>
+
+<main>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="hero-eyebrow">
+      <span></span>
+      hack club hackpad
+      <span></span>
+    </div>
+    <h1>Media<br><span class="accent">pad.</span></h1>
+    <p class="hero-sub">I got tired of reaching for my keyboard every time I wanted to change the volume, so I designed my own. custom PCB, mechanical keys, rotary encoder for volume, and a case I'm building in Onshape. still a work in progress but coming together.</p>
+    <div class="hero-btns">
+      <a href="https://github.com/AryaVora621/mediapad" class="btn-primary">
+        ★ see it on GitHub
+      </a>
+      <a href="#pcb" class="btn-ghost">
+        how it works ↓
+      </a>
+    </div>
+    <div class="hero-tags">
+      <span class="tag">KiCad</span>
+      <span class="tag">Seeed XIAO RP2040</span>
+      <span class="tag">KMK Firmware</span>
+      <span class="tag">Onshape</span>
+      <span class="tag">CircuitPython</span>
+      <span class="tag">Hack Club</span>
+    </div>
+
+    <!-- progress tracker -->
+    <div class="progress-bar">
+      <div class="progress-bar-label">project progress</div>
+      <div class="progress-steps">
+        <div class="progress-step done">
+          <div class="step-dot done">✓</div>
+          <div class="step-label done">PCB design</div>
+        </div>
+        <div class="progress-step wip">
+          <div class="step-dot wip">~</div>
+          <div class="step-label wip">case design</div>
+        </div>
+        <div class="progress-step next">
+          <div class="step-dot next">○</div>
+          <div class="step-label">OLED + solder</div>
+        </div>
+        <div class="progress-step next">
+          <div class="step-dot next">○</div>
+          <div class="step-label">final build</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PCB -->
+  <section id="pcb">
+    <div class="card">
+      <div class="label">the pcb</div>
+      <h2>Designed in KiCad</h2>
+      <p class="section-sub">This was my first real PCB. I did the schematic first, then placed everything and routed all the traces by hand. It's small enough to sit next to a keyboard without being in the way. The design is done and ready to fab.</p>
+
+      <div class="pcb-grid">
+        <div class="pcb-component">
+          <div class="pcb-component-icon">🧠</div>
+          <div class="pcb-component-name">Seeed XIAO RP2040</div>
+          <div class="pcb-component-desc">Tiny microcontroller with USB-C built in. Runs CircuitPython which makes the firmware super easy to write and change.</div>
+          <div class="pcb-component-chip">U1 — XIAO RP2040</div>
+        </div>
+        <div class="pcb-component">
+          <div class="pcb-component-icon">🎛</div>
+          <div class="pcb-component-name">Rotary Encoder</div>
+          <div class="pcb-component-desc">Turn it to change volume, click it to mute. EC11-compatible so it's easy to source and swap out.</div>
+          <div class="pcb-component-chip">SW1 — RotaryEncoder_Switch</div>
+        </div>
+        <div class="pcb-component">
+          <div class="pcb-component-icon">⌨️</div>
+          <div class="pcb-component-name">3 Mechanical Switches</div>
+          <div class="pcb-component-desc">Play/pause, previous, next. MX-compatible so any MX switch fits, whatever feel you want.</div>
+          <div class="pcb-component-chip">SW2 · SW3 · SW4</div>
+        </div>
+        <div class="pcb-component pending">
+          <div class="pcb-component-icon">📟</div>
+          <div class="pcb-component-name">128x32 OLED</div>
+          <div class="pcb-component-desc">I left the footprint on the board already. Going to wire it up after the core build is working and show track name + volume.</div>
+          <div class="pcb-component-chip pending-chip">coming soon</div>
+        </div>
+      </div>
+
+      <div class="pcb-diagram">
+        <div class="pcb-diagram-label">how it works</div>
+        <div class="flow">
+          <div class="flow-node">Encoder (A/B/SW)</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">XIAO RP2040</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">USB HID</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">your computer</div>
+        </div>
+        <div class="flow">
+          <div class="flow-node">SW2 · SW3 · SW4</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">XIAO RP2040</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CASE -->
+  <section id="case">
+    <div class="card">
+      <div class="label">the case</div>
+      <h2>Designed in Onshape</h2>
+      <p class="section-sub">Currently a work in progress. I have a first version modeled but honestly it's just a rectangular brick right now. I'm going to redo it to actually look good before the final build.</p>
+
+      <div class="case-grid">
+        <div class="case-card">
+          <div class="case-card-label">v1 — current</div>
+          <div class="case-visual case-visual-current">
+            <div class="rect-box">
+              <div class="rect-switch"></div>
+              <div class="rect-switch"></div>
+              <div class="rect-switch"></div>
+              <div class="rect-knob"></div>
+            </div>
+          </div>
+          <h4>the rectangular brick</h4>
+          <p>Gets the job done functionally, all the cutouts are in the right place. but it looks exactly as boring as it sounds. not shipping this one.</p>
+        </div>
+        <div class="case-card">
+          <div class="case-card-label">v2 — goal</div>
+          <div class="case-visual case-visual-goal">
+            designing something cooler...
+          </div>
+          <h4>the redesign</h4>
+          <p>Going to redo it with better proportions, angled edges, and something that actually looks intentional. probably some chamfers or a wedge profile. TBD.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FIRMWARE -->
+  <section id="firmware">
+    <div class="card">
+      <div class="label">firmware</div>
+      <h2>Running KMK</h2>
+      <p class="section-sub">KMK is keyboard firmware written in CircuitPython. The Mediapad shows up as a regular USB keyboard to your computer, no drivers needed. Changing keybindings is just editing a python file and saving, no reflashing.</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dot" style="background:#ff5f57"></div>
+          <div class="code-dot" style="background:#febc2e"></div>
+          <div class="code-dot" style="background:#28c840"></div>
+          <div class="code-filename">code.py</div>
+        </div>
+<span class="c-comment"># Mediapad KMK config</span>
+<span class="c-keyword">from</span> kmk.kmk_keyboard <span class="c-keyword">import</span> KMKKeyboard
+<span class="c-keyword">from</span> kmk.keys <span class="c-keyword">import</span> KC
+<span class="c-keyword">from</span> kmk.modules.encoder <span class="c-keyword">import</span> EncoderHandler
+
+keyboard = <span class="c-fn">KMKKeyboard</span>()
+encoder_handler = <span class="c-fn">EncoderHandler</span>()
+
+<span class="c-comment"># 3 keys: play/pause, prev, next</span>
+keyboard.keymap = [[
+    KC.MPLY,
+    KC.MPRV,
+    KC.MNXT,
+]]
+
+<span class="c-comment"># encoder: vol up, vol down, mute on click</span>
+encoder_handler.map = [[(KC.VOLU, KC.VOLD, KC.MUTE)]]
+      </div>
+
+      <div class="fw-features">
+        <div class="fw-feature">
+          <div class="fw-feature-icon">🔌</div>
+          <div class="fw-feature-text"><strong>just plug it in</strong>shows up as a standard keyboard. works on mac, windows, and linux with zero setup.</div>
+        </div>
+        <div class="fw-feature">
+          <div class="fw-feature-icon">🐍</div>
+          <div class="fw-feature-text"><strong>CircuitPython</strong>the XIAO mounts as a USB drive. edit code.py and save. no compile step, no flashing tools.</div>
+        </div>
+        <div class="fw-feature">
+          <div class="fw-feature-icon">🎛</div>
+          <div class="fw-feature-text"><strong>encoder support</strong>KMK handles rotary encoders natively. clockwise and counterclockwise each map to their own key.</div>
+        </div>
+        <div class="fw-feature">
+          <div class="fw-feature-icon">🔁</div>
+          <div class="fw-feature-text"><strong>easy to remap</strong>want scroll or zoom instead of volume? just change two lines. no touching hardware.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SPECS -->
+  <section id="specs">
+    <div class="card">
+      <div class="label">parts list</div>
+      <h2>What's in it</h2>
+      <p class="section-sub">All the components for the build. Parts marked "in kit" are included in the Hackpad component kit from Hack Club.</p>
+
+      <table class="specs-table">
+        <thead>
+          <tr><th>Part</th><th>Details</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Microcontroller <span class="kit-badge">in kit</span></td>
+            <td>Seeed Studio XIAO RP2040, USB-C, 264KB SRAM, 2MB Flash</td>
+          </tr>
+          <tr>
+            <td>Rotary Encoder <span class="kit-badge">in kit</span></td>
+            <td>EC11-compatible, 20 detents, built-in click switch</td>
+          </tr>
+          <tr>
+            <td>Switches <span class="kit-badge">in kit</span></td>
+            <td>3x MX-compatible mechanical switches</td>
+          </tr>
+          <tr>
+            <td>Keycaps <span class="kit-badge">in kit</span></td>
+            <td>1U MX-compatible keycaps</td>
+          </tr>
+          <tr>
+            <td>OLED <span class="kit-badge">in kit</span></td>
+            <td>SSD1306 128x32 over I2C, footprint already on the PCB, adding it next</td>
+          </tr>
+          <tr>
+            <td>PCB</td>
+            <td>2-layer KiCad design, ordering from JLCPCB</td>
+          </tr>
+          <tr>
+            <td>Case</td>
+            <td>3D printed, designed in Onshape, v2 redesign in progress</td>
+          </tr>
+          <tr>
+            <td>Firmware</td>
+            <td>KMK on CircuitPython, open source</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- WHATS NEXT -->
+  <section id="next">
+    <div class="card">
+      <div class="label">what's next</div>
+      <h2>Still working on it</h2>
+      <p class="section-sub">PCB design is done. Case is in progress. Here's what's left before this thing is fully built.</p>
+
+      <div class="next-items">
+        <div class="next-item active">
+          <div class="next-num">01</div>
+          <div class="next-content">
+            <h4>redesign the case</h4>
+            <p>The current v1 case in Onshape is basically just a box with holes in it. Going to redo it with better proportions and something that actually looks like it was designed on purpose.</p>
+          </div>
+          <div class="next-badge badge-wip">in progress</div>
+        </div>
+        <div class="next-item">
+          <div class="next-num">02</div>
+          <div class="next-content">
+            <h4>add the OLED to the PCB</h4>
+            <p>I left the footprint for the SSD1306 on the board already. Next revision of the PCB will have it wired up over I2C. Going to show track name and volume level.</p>
+          </div>
+          <div class="next-badge badge-next">next</div>
+        </div>
+        <div class="next-item">
+          <div class="next-num">03</div>
+          <div class="next-content">
+            <h4>solder and test the full build</h4>
+            <p>Once the PCB is back from fab and the case is printed, actually solder everything together and make sure it works. Debug whatever inevitably goes wrong.</p>
+          </div>
+          <div class="next-badge badge-next">next</div>
+        </div>
+        <div class="next-item">
+          <div class="next-num">04</div>
+          <div class="next-content">
+            <h4>song metadata on the OLED</h4>
+            <p>Eventually want to write a small companion app that sends the current track name over USB serial so it shows on screen. no idea how hard that'll be yet.</p>
+          </div>
+          <div class="next-badge badge-next">someday</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section id="cta">
+    <div class="card cta-card">
+      <div class="label" style="justify-content:center;">open source</div>
+      <h2>follow along</h2>
+      <p>KiCad files and firmware config are all on GitHub. I'll keep pushing updates as the build progresses.</p>
+      <div class="hero-btns">
+        <a href="https://github.com/AryaVora621/mediapad" class="btn-primary">
+          ★ star it on GitHub
+        </a>
+        <a href="https://github.com/AryaVora621/mediapad" class="btn-ghost">
+          view the schematic ↗
+        </a>
+      </div>
+
+      <div class="hc-banner">
+        <div class="hc-banner-text">
+          <strong>this project is part of Hack Club's Hackpad program.</strong> teens can design their own PCB and get the parts, PCB manufacturing, and 3D printing all covered for free.
+        </div>
+        <a href="https://stardance.hackclub.com/missions/hackpad/guide" class="hc-banner-link">learn more ↗</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  built by arya vora · KiCad + Onshape + KMK · hack club hackpad
+</footer>
+
+</body>
+</html>
