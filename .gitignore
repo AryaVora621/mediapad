@@ -1,3 +1,5 @@
 .superpowers/
 *.lck
 .vercel/
+.vercel
+.history/
